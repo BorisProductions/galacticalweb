@@ -1,0 +1,110 @@
+Open file: js/index.js
+
+Find this function (search for it):
+function initFaq(container) {
+
+Inside that function, find these lines:
+  let bg = container.querySelector('[data-flip-button="bg"]');
+  if (!bg) {
+    bg = document.createElement('div');
+    bg.className = 'tab-button__bg';
+    bg.setAttribute('data-flip-button', 'bg');
+    buttons[0].appendChild(bg);
+  }
+
+After those lines, DELETE everything that comes after until the end of the function.
+
+Then PASTE this code right after the bg creation:
+
+  // Scroll-based navigation highlighting
+  const rows = container.querySelectorAll("[data-faq-nav='row']");
+  const links = container.querySelectorAll("[data-faq-nav='link']");
+
+  function setActiveLink(activeIndex) {
+    const safeIndex = Math.max(0, Math.min(activeIndex, buttons.length - 1));
+    buttons.forEach((btn, index) => {
+      if (index === safeIndex) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    });
+    if (window.Flip && bg) {
+      try {
+        const activeButton = buttons[safeIndex];
+        if (activeButton && !activeButton.contains(bg)) {
+          const state = Flip.getState(bg);
+          activeButton.appendChild(bg);
+          Flip.from(state, { duration: 0.4, ease: "power2.out" });
+        }
+      } catch(e) {}
+    }
+  }
+
+  if (rows.length) {
+    rows.forEach((row, index) => {
+      ScrollTrigger.create({
+        trigger: row,
+        start: "top 30%",
+        end: "bottom 30%",
+        onEnter: () => setActiveLink(index),
+        onEnterBack: () => setActiveLink(index),
+        onLeave: () => {
+          if (index < rows.length - 1) {
+            setActiveLink(index + 1);
+          }
+        },
+        onLeaveBack: () => {
+          if (index > 0) {
+            setActiveLink(index - 1);
+          }
+        }
+      });
+    });
+  }
+
+  buttons.forEach((button, index) => {
+    const innerLink = button.querySelector('[data-faq-nav="link"]');
+    button.addEventListener('click', function(e) {
+      if (e.target.tagName !== 'A') {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      }
+      setActiveLink(index);
+      if (innerLink) {
+        const href = innerLink.getAttribute('href');
+        if (href && href.startsWith('#')) {
+          const target = container.querySelector(href);
+          if (target) {
+            if (typeof lenis !== 'undefined' && lenis && lenis.scrollTo) {
+              lenis.scrollTo(target, { offset: -120, duration: 1 });
+            } else {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+        }
+      }
+    });
+  });
+
+  gsap.delayedCall(0.2, () => {
+    if (!rows.length) return;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const viewportHeight = window.innerHeight;
+    let activeIdx = 0;
+    rows.forEach((row, idx) => {
+      const rect = row.getBoundingClientRect();
+      const rowTop = rect.top + scrollY;
+      const triggerPoint = scrollY + (viewportHeight * 0.3);
+      if (triggerPoint >= rowTop) {
+        activeIdx = idx;
+      }
+    });
+    setActiveLink(activeIdx);
+  });
+}
+
+Add the closing brace } at the end if needed.
+
+Save the file.
+
+Done.
